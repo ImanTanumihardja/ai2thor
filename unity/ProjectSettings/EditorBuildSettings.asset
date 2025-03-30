@@ -629,5 +629,13 @@ EditorBuildSettings:
   - enabled: 1
     path: Assets/Scenes/Procedural/ProceduralAB.unity
     guid: fd717091e397d634d810ffab2532f74b
-  m_configObjects: {}
+  m_configObjects:
+    UnityEditor.XR.VisionOS.VisionOSSettings: {fileID: 11400000, guid: 9526e8b8061804581abc0eeaca8185b7,
+      type: 2}
+    com.unity.polyspatial.xr.xr_settings: {fileID: 11400000, guid: 0e335fcef4b1a469c87f70c79c01dc83,
+      type: 2}
+    com.unity.xr.arfoundation.simulation_settings: {fileID: 11400000, guid: d3c50ecf2481a4e309d6c01459ceac2a,
+      type: 2}
+    com.unity.xr.management.loader_settings: {fileID: 11400000, guid: 4302ccdd7ed824a6292928383b872124,
+      type: 2}
   m_UseUCBPForAssetBundles: 0
