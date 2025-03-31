@@ -1254,7 +1254,7 @@ public class PhysicsSceneManager : MonoBehaviour {
             return;
         }
         var previousAutoSimulate = Physics.autoSimulation;
-        Physics.autoSimulation = false;
+        Physics.autoSimulation = true;
         while (enumerator.MoveNext()) {
             float? fixedDeltaTime = enumerator.Current;
             if (!fixedDeltaTime.HasValue) {
