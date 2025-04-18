@@ -8,6 +8,8 @@ using UnityEngine.SceneManagement;
 // using System.Linq;
 using UnityStandardAssets.Characters.FirstPerson;
 using UnityStandardAssets.ImageEffects;
+using Unity.PolySpatial;
+using UnityEngine.XR.Interaction.Toolkit.Interactables;
 
 
 [ExecuteInEditMode]
@@ -444,6 +446,35 @@ public class PhysicsSceneManager : MonoBehaviour {
                 Rigidbody rb = sop.GetComponent<Rigidbody>();
                 rb.isKinematic = false;
                 rb.collisionDetectionMode = CollisionDetectionMode.ContinuousSpeculative;
+            }
+        }
+    }
+
+    public void MakeAllObjectsXRInteractable() {
+        foreach (SimObjPhysics sop in GameObject.FindObjectsOfType<SimObjPhysics>()) {
+            if (
+                sop.PrimaryProperty == SimObjPrimaryProperty.CanPickup
+                || sop.PrimaryProperty == SimObjPrimaryProperty.Moveable
+            ) {
+                if (
+                    sop.GetComponent<XRGrabInteractable>() == null
+                ) {
+                    sop.gameObject.AddComponent<XRGrabInteractable>();
+                }
+                if (
+                    sop.GetComponent<VisionOSHoverEffect>() == null
+                ) {
+                    sop.gameObject.AddComponent<VisionOSHoverEffect>();
+                }
+
+                // Get Mesh
+                GameObject mesh = sop.GetComponentInChildren<MeshRenderer>().gameObject;
+                if (
+                    mesh.GetComponent<BoxCollider>() == null
+                ) {
+                    // Add BoxCollider
+                    mesh.AddComponent<BoxCollider>();
+                }
             }
         }
     }
@@ -1254,7 +1285,7 @@ public class PhysicsSceneManager : MonoBehaviour {
             return;
         }
         var previousAutoSimulate = Physics.autoSimulation;
-        Physics.autoSimulation = true;
+        Physics.autoSimulation = false;
         while (enumerator.MoveNext()) {
             float? fixedDeltaTime = enumerator.Current;
             if (!fixedDeltaTime.HasValue) {

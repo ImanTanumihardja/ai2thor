@@ -52,6 +52,7 @@ public class AgentManager : MonoBehaviour, ActionInvokable {
     private bool renderNormalsImage;
     private bool renderFlowImage;
     private Socket sock = null;
+    private bool isRequestInProgress = false;
 
     [SerializeField]
     public List<Camera> thirdPartyCameras = new List<Camera>();
@@ -292,7 +293,12 @@ public class AgentManager : MonoBehaviour, ActionInvokable {
             }
             // if (actiongF)
             // actionFinished.
-        } else {
+        } 
+        else if (agentMode == "vr") {
+            SetUpPhysicsController();
+            physicsSceneManager.MakeAllObjectsXRInteractable();
+        }    
+        else {
             var error = $"Invalid agentMode {action.agentMode}";
             Debug.Log(error);
             primaryAgent.actionFinished(success: false, errorMessage: error);
@@ -1515,6 +1521,86 @@ public class AgentManager : MonoBehaviour, ActionInvokable {
         }
     }
 
+    private async Task<string> ReceiveSocketMessageAsync(int timeoutMilliseconds = 100)
+    {
+
+        Debug.Log("Starting async socket receive operation with timeout: " + timeoutMilliseconds + "ms");
+        // Create a cancellation token with timeout
+        using var cancellationTokenSource = new CancellationTokenSource(timeoutMilliseconds);
+        var cancellationToken = cancellationTokenSource.Token;
+
+        string msg = await Task.Run(async () => {
+            try {
+                    byte[] headerBuffer = new byte[1024];
+                    int bytesReceived = 0;
+                    byte[] bodyBuffer = null;
+                    int bodyBytesReceived = 0;
+                    int contentLength = 0;
+
+                    // read header
+                    while (true) {
+                        int received = this.sock.Receive(
+                            headerBuffer,
+                            bytesReceived,
+                            headerBuffer.Length - bytesReceived,
+                            SocketFlags.None
+                        );
+                        if (received == 0) {
+                            Debug.LogError(
+                                "0 bytes received attempting to read header - connection closed"
+                            );
+                            break;
+                        }
+
+                        bytesReceived += received;
+                        ;
+                        string headerMsg = Encoding.ASCII.GetString(headerBuffer, 0, bytesReceived);
+                        int offset = headerMsg.IndexOf("\r\n\r\n");
+                        if (offset > 0) {
+                            contentLength = parseContentLength(headerMsg.Substring(0, offset));
+                            bodyBuffer = new byte[contentLength];
+                            bodyBytesReceived = bytesReceived - (offset + 4);
+                            Array.Copy(headerBuffer, offset + 4, bodyBuffer, 0, bodyBytesReceived);
+                            break;
+                        }
+                    }
+
+                    // read body
+                    while (bodyBytesReceived < contentLength) {
+                        // check for 0 bytes received
+                        int received = this.sock.Receive(
+                            bodyBuffer,
+                            bodyBytesReceived,
+                            bodyBuffer.Length - bodyBytesReceived,
+                            SocketFlags.None
+                        );
+                        if (received == 0) {
+                            Debug.LogError(
+                                "0 bytes received attempting to read body - connection closed"
+                            );
+                            break;
+                        }
+
+                        bodyBytesReceived += received;
+                        // Debug.Log("total bytes received: " + bodyBytesReceived);
+                    }
+
+
+                    string msg = Encoding.ASCII.GetString(bodyBuffer, 0, bodyBytesReceived);
+                    return msg;
+            }
+            catch (Exception ex) {
+                Debug.LogError($"Socket receive error: {ex.Message}");
+                return null;
+            }
+        });
+
+        // Debug.Log("Received response: " + msg);
+        isRequestInProgress = false;
+        ProcessControlCommand(msg);
+        return msg;
+    }
+
     public IEnumerator EmitFrame() {
         while (true) {
             bool shouldRender = this.renderImage && serverSideScreenshot;
@@ -1586,7 +1672,7 @@ public class AgentManager : MonoBehaviour, ActionInvokable {
                 form.AddField("token", robosimsClientToken);
 
                 if (this.sock == null) {
-                    // Debug.Log("connecting to host: " + robosimsHost);
+                    Debug.Log("connecting to host: " + robosimsHost);
                     IPAddress host = IPAddress.Parse(robosimsHost);
                     IPEndPoint hostep = new IPEndPoint(host, robosimsPort);
                     this.sock = new Socket(
@@ -1596,6 +1682,7 @@ public class AgentManager : MonoBehaviour, ActionInvokable {
                     );
                     try {
                         this.sock.Connect(hostep);
+                        Debug.Log("Socket connected");
                     } catch (SocketException e) {
                         var msg = e.ToString();
                         Debug.Log("Socket exception: " + msg);
@@ -1606,12 +1693,14 @@ public class AgentManager : MonoBehaviour, ActionInvokable {
                         Debug.LogWarning(
                             "EmitFrame WILL STOP RUNNING. createPayload will not be called after every action. Possible environment mismatch. Use python server to match standalone environment."
                         );
-                        break;
+                        this.sock = null;
+                        // break;
 #endif
                     }
+                    // this.sock.Blocking = false;
                 }
 
-                if (this.sock != null && this.sock.Connected) {
+                if (this.sock != null && this.sock.Connected && !isRequestInProgress) {
                     byte[] rawData = form.data;
 
                     string request =
@@ -1625,70 +1714,18 @@ public class AgentManager : MonoBehaviour, ActionInvokable {
                     }
                     request += "\r\n";
 
+                    Debug.Log("Sending request: " + request);
                     this.sock.Send(Encoding.ASCII.GetBytes(request));
                     this.sock.Send(rawData);
+                    isRequestInProgress = true;
 
-                    // waiting for a frame here keeps the Unity window in sync visually
-                    // its not strictly necessary, but allows the interact() command to work properly
-                    // and does not reduce the overall FPS
                     yield return new WaitForEndOfFrame();
-
-                    byte[] headerBuffer = new byte[1024];
-                    int bytesReceived = 0;
-                    byte[] bodyBuffer = null;
-                    int bodyBytesReceived = 0;
-                    int contentLength = 0;
-
-                    // read header
-                    while (true) {
-                        int received = this.sock.Receive(
-                            headerBuffer,
-                            bytesReceived,
-                            headerBuffer.Length - bytesReceived,
-                            SocketFlags.None
-                        );
-                        if (received == 0) {
-                            Debug.LogError(
-                                "0 bytes received attempting to read header - connection closed"
-                            );
-                            break;
-                        }
-
-                        bytesReceived += received;
-                        ;
-                        string headerMsg = Encoding.ASCII.GetString(headerBuffer, 0, bytesReceived);
-                        int offset = headerMsg.IndexOf("\r\n\r\n");
-                        if (offset > 0) {
-                            contentLength = parseContentLength(headerMsg.Substring(0, offset));
-                            bodyBuffer = new byte[contentLength];
-                            bodyBytesReceived = bytesReceived - (offset + 4);
-                            Array.Copy(headerBuffer, offset + 4, bodyBuffer, 0, bodyBytesReceived);
-                            break;
-                        }
-                    }
-
-                    // read body
-                    while (bodyBytesReceived < contentLength) {
-                        // check for 0 bytes received
-                        int received = this.sock.Receive(
-                            bodyBuffer,
-                            bodyBytesReceived,
-                            bodyBuffer.Length - bodyBytesReceived,
-                            SocketFlags.None
-                        );
-                        if (received == 0) {
-                            Debug.LogError(
-                                "0 bytes received attempting to read body - connection closed"
-                            );
-                            break;
-                        }
-
-                        bodyBytesReceived += received;
-                        // Debug.Log("total bytes received: " + bodyBytesReceived);
-                    }
-
-                    string msg = Encoding.ASCII.GetString(bodyBuffer, 0, bodyBytesReceived);
-                    ProcessControlCommand(msg);
+                    
+                    // Create task to receive response but don't await it in the coroutine
+                    ReceiveSocketMessageAsync();
+                    
+                    // Continue execution without waiting for the response
+                    yield return null;
                 }
             } else if (serverType == serverTypes.FIFO) {
                 byte[] msgPackMetadata =
@@ -1881,6 +1918,8 @@ public class AgentManager : MonoBehaviour, ActionInvokable {
         this.agentManagerState = AgentState.Error;
     }
 }
+
+
 
 [Serializable]
 [MessagePackObject(keyAsPropertyName: true)]
