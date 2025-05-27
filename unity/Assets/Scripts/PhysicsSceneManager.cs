@@ -456,11 +456,11 @@ public class PhysicsSceneManager : MonoBehaviour {
                 sop.PrimaryProperty == SimObjPrimaryProperty.CanPickup
                 || sop.PrimaryProperty == SimObjPrimaryProperty.Moveable
             ) {
-                if (
-                    sop.GetComponent<XRGrabInteractable>() == null
-                ) {
-                    sop.gameObject.AddComponent<XRGrabInteractable>();
-                }
+                // if (
+                //     sop.GetComponent<XRGrabInteractable>() == null
+                // ) {
+                //     sop.gameObject.AddComponent<XRGrabInteractable>();
+                // }
                 if (
                     sop.GetComponent<VisionOSHoverEffect>() == null
                 ) {

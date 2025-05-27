@@ -294,7 +294,7 @@ public class AgentManager : MonoBehaviour, ActionInvokable {
             // if (actiongF)
             // actionFinished.
         } 
-        else if (agentMode == "vr") {
+        else if (agentMode == "neural_os") {
             SetUpPhysicsController();
             physicsSceneManager.MakeAllObjectsXRInteractable();
         }    
@@ -1432,6 +1432,54 @@ public class AgentManager : MonoBehaviour, ActionInvokable {
             metadata.depthFormat = DepthFormat.Meters.ToString();
             metadata.agentId = i;
 
+            // Add AVP metadata'
+            metadata.neuralOS = new NeuralOSMetadata();
+            GameObject selectedObject = XRManager.Instance.GetSelectedObject();
+            if (selectedObject != null) {
+                SimObjPhysics simObj = selectedObject.GetComponent<SimObjPhysics>();
+                if (simObj == null) {
+                    Debug.LogError("Selected object is not a SimObjPhysics");
+                    continue;
+                }
+                ObjectMetadata meta = SimObjPhysics.ObjectMetadataFromSimObjPhysics(
+                    simObj,
+                    true,
+                    true
+                );
+                // if (meta.toggleable) {
+                //     SimObjPhysics[] controlled = simObj
+                //         .GetComponent<CanToggleOnOff>()
+                //         .ReturnControlledSimObjects();
+                    // List<string> controlledList = new List<string>();
+                    // foreach (SimObjPhysics csop in controlled) {
+                    //     controlledList.Add(csop.objectID);
+                    // }
+                    // meta.controlledObjects = controlledList.ToArray();
+                // }
+                // if (meta.receptacle) {
+                //     List<string> containedObjectsAsID = new List<String>();
+                //     foreach (GameObject go in simObj.ContainedGameObjects()) {
+                //         containedObjectsAsID.Add(go.GetComponent<SimObjPhysics>().ObjectID);
+                //     }
+                //     List<string> roid = containedObjectsAsID; // simObj.Contains();
+
+                //     foreach (string oid in roid) {
+                //         if (!parentReceptacles.ContainsKey(oid)) {
+                //             parentReceptacles[oid] = new List<string>();
+                //         }
+                //         parentReceptacles[oid].Add(simObj.ObjectID);
+                //     }
+                //     meta.receptacleObjectIds = roid.ToArray();
+                // }
+                // meta.distance = Vector3.Distance(
+                //     transform.position,
+                //     simObj.gameObject.transform.position
+                // );
+
+                metadata.neuralOS.selectedObject = meta;
+            }
+
+
             // we don't need to render the agent's camera for the first agent
 
             if (shouldRender) {
@@ -1523,8 +1571,6 @@ public class AgentManager : MonoBehaviour, ActionInvokable {
 
     private async Task<string> ReceiveSocketMessageAsync(int timeoutMilliseconds = 100)
     {
-
-        Debug.Log("Starting async socket receive operation with timeout: " + timeoutMilliseconds + "ms");
         // Create a cancellation token with timeout
         using var cancellationTokenSource = new CancellationTokenSource(timeoutMilliseconds);
         var cancellationToken = cancellationTokenSource.Token;
@@ -2367,6 +2413,13 @@ public class SetObjectStates {
 
 [Serializable]
 [MessagePackObject(keyAsPropertyName: true)]
+public class NeuralOSMetadata {
+    // object that user has looked at and clicked on
+    public ObjectMetadata selectedObject;
+}
+
+[Serializable]
+[MessagePackObject(keyAsPropertyName: true)]
 public struct MetadataWrapper {
     public ObjectMetadata[] objects;
     public bool isSceneAtRest; // set true if all objects in the scene are at rest (or very very close to 0 velocity)
@@ -2416,6 +2469,9 @@ public struct MetadataWrapper {
     public SceneBounds sceneBounds; // return coordinates of the scene's bounds (center, size, extents)
 
     public object actionReturn;
+
+    // NeuralOS
+    public NeuralOSMetadata neuralOS;
 }
 
 /*

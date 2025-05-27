@@ -23,15 +23,22 @@ public class XRManager : MonoBehaviour
     /// </summary>
     /// 
 
-    private AgentManager _agentManager = null;
+    // private AgentManager _agentManager = null;
     private bool _isInitialized = false;
     private GameObject _selectedObject = null;
 
     public static XRManager Instance { get; private set; }
 
-    BaseFPSAgentController CurrentActiveController() {
-        return _agentManager.PrimaryAgent;
+    public GameObject GetSelectedObject() {
+        if (_selectedObject == null) {
+            return null;
+        }
+        return _selectedObject;
     }
+
+    // BaseFPSAgentController CurrentActiveController() {
+    //     return _agentManager.PrimaryAgent;
+    // }
 
     void OnEnable()
     {
@@ -47,44 +54,44 @@ public class XRManager : MonoBehaviour
             Instance = this;
         }
 
-        _agentManager = GameObject.Find("PhysicsSceneManager").GetComponentInChildren<AgentManager>();
+        // _agentManager = GameObject.Find("PhysicsSceneManager").GetComponentInChildren<AgentManager>();
     }
         
 
-    public void Initialize() {
-        if (_isInitialized) {
-            return;
-        }
-        Dictionary<string, object> action = new Dictionary<string, object>();
-        // if you want to use smaller grid size step increments, initialize with a smaller/larger gridsize here
-        // by default the gridsize is 0.25, so only moving in increments of .25 will work
-        // so the MoveAhead action will only take, by default, 0.25, .5, .75 etc magnitude with the default
-        // grid size!
-        // action.renderNormalsImage = true;
-        // action.renderDepthImage = true;
-        // action.renderSemanticSegmentation = true;
-        // action.renderInstanceSegmentation = true;
-        // action.renderFlowImage = true;
-        // action.rotateStepDegrees = 30;
-        // action.ssao = "default";
-        // action.snapToGrid = true;
-        // action.makeAgentsVisible = false;
-        action["agentMode"] = "vr";
-        action["fieldOfView"] = 90f;
-        // action.cameraY = 2.0f;
-        action["snapToGrid"] = true;
-        // action.rotateStepDegrees = 45;
-        action["autoSimulation"] = true;
-        action["action"] = "Initialize";
-        CurrentActiveController().ProcessControlCommand(new DynamicServerAction(action), _agentManager);
+    // public void Initialize() {
+    //     if (_isInitialized) {
+    //         return;
+    //     }
+    //     Dictionary<string, object> action = new Dictionary<string, object>();
+    //     // if you want to use smaller grid size step increments, initialize with a smaller/larger gridsize here
+    //     // by default the gridsize is 0.25, so only moving in increments of .25 will work
+    //     // so the MoveAhead action will only take, by default, 0.25, .5, .75 etc magnitude with the default
+    //     // grid size!
+    //     // action.renderNormalsImage = true;
+    //     // action.renderDepthImage = true;
+    //     // action.renderSemanticSegmentation = true;
+    //     // action.renderInstanceSegmentation = true;
+    //     // action.renderFlowImage = true;
+    //     // action.rotateStepDegrees = 30;
+    //     // action.ssao = "default";
+    //     // action.snapToGrid = true;
+    //     // action.makeAgentsVisible = false;
+    //     action["agentMode"] = "neuralOS";
+    //     action["fieldOfView"] = 90f;
+    //     // action.cameraY = 2.0f;
+    //     action["snapToGrid"] = true;
+    //     // action.rotateStepDegrees = 45;
+    //     action["autoSimulation"] = true;
+    //     action["action"] = "Initialize";
+    //     CurrentActiveController().ProcessControlCommand(new DynamicServerAction(action), _agentManager);
 
-        _isInitialized = true;
-    }
+    //     _isInitialized = true;
+    // }
 
     private void Update() {
-        if (Input.GetKeyDown(KeyCode.Space)) {
-            Initialize();
-        }
+        // if (Input.GetKeyDown(KeyCode.Space)) {
+        //     Initialize();
+        // }
 
         var activeTouches = Touch.activeTouches;
 
@@ -101,7 +108,7 @@ public class XRManager : MonoBehaviour
                     if (obj != null)
                     {
                         GameObject objParent = obj.transform.parent.gameObject;
-                        if (objParent != null && objParent.tag == "SimObjPhysics" && objParent.GetComponent<SimObjPhysics>() != null)
+                        if (objParent != null && objParent.tag == "SimObjPhysics")
                         {
                             _selectedObject = objParent;
                             Debug.Log("Selected object: " + _selectedObject.name);
