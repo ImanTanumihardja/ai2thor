@@ -47,13 +47,14 @@ AVAILABLE AFFORDANCE PRIMITIVES:
 - noop: no operation (do nothing)
 
 OUTPUT FORMAT:
-Return exactly 5 affordance primitives ranked by probability as a JSON array:
+Return exactly 5 affordance primitives ranked by probability as a JSON array with each object containing
+primitive, confidence (0.0 to 1.0), target (objectId), and description of the affordance:
 [
-  {{"primitive": "grasp", "confidence": 0.45, "target": "Apple", "description": "Pick up the apple from the counter"}},
-  {{"primitive": "slice", "confidence": 0.30, "target": "Apple", "description": "Cut the apple with a knife"}},
-  {{"primitive": "eat", "confidence": 0.15, "target": "Apple", "description": "Consume the apple directly"}},
-  {{"primitive": "place", "confidence": 0.07, "target": "Apple", "description": "Set the apple down elsewhere"}},
-  {{"primitive": "cook", "confidence": 0.03, "target": "Apple", "description": "Heat the apple for cooking"}}
+  {{"primitive": "<primitive>", "confidence": <confidence>, "target": "<target>", "description": "<description>"}},
+  {{"primitive": "<primitive>", "confidence": <confidence>, "target": "<target>", "description": "<description>"}},
+  {{"primitive": "<primitive>", "confidence": <confidence>, "target": "<target>", "description": "<description>"}},
+  {{"primitive": "<primitive>", "confidence": <confidence>, "target": "<target>", "description": "<description>"}},
+  {{"primitive": "<primitive>", "confidence": <confidence>, "target": "<target>", "description": "<description>"}}
 ]
 
 REASONING GUIDELINES:
@@ -92,7 +93,7 @@ Respond with ONLY the JSON array, no additional text.
         history_text = self._format_history(history_buffer)
         
         # Format user profile
-        user_text = self._format_user_profile(user_embedding)
+        user_text = "User only likes sliced apples"#self._format_user_profile(user_embedding)
         
         return self.base_template.format(
             scene_context=scene_context,
@@ -341,7 +342,7 @@ class JSONAffordanceLLM:
                     max_tokens=500
                 )
             
-            response_text = response.choices[0].message.content
+                response_text = response.choices[0].message.content
 
             # Convert content to JSON affordances
             parser = JSONPromptBuilder()
