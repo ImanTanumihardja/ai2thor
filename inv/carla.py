@@ -93,7 +93,7 @@ Respond with ONLY the JSON array, no additional text.
         history_text = self._format_history(history_buffer)
         
         # Format user profile
-        user_text = "User only likes sliced apples" 
+        user_text = self._format_user_profile(user_embedding) #"User only likes sliced apples"
         
         return self.base_template.format(
             scene_context=scene_context,
@@ -304,7 +304,8 @@ class JSONAffordanceLLM:
         self.ollama_url = ollama_url
         self.temperature = temperature
         # OpenAI
-        self.client = openai.OpenAI()
+        if not ollama_url:
+            self.client = openai.OpenAI()
 
     
     def get_affordances(self, prompt: str) -> Optional[List[Dict]]:
