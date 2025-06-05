@@ -93,7 +93,7 @@ Respond with ONLY the JSON array, no additional text.
         history_text = self._format_history(history_buffer)
         
         # Format user profile
-        user_text = "User only likes sliced apples"#self._format_user_profile(user_embedding)
+        user_text = "User only likes sliced apples" 
         
         return self.base_template.format(
             scene_context=scene_context,
@@ -386,6 +386,8 @@ class Carla:
         )
 
         print("Generated Prompt:\n", prompt)
+        
+        print("Getting affordances from LLM...")
         
         # Get LLM predictions
         affordances = self.llm.get_affordances(prompt)

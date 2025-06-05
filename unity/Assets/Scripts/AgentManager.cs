@@ -36,7 +36,7 @@ public class AgentManager : MonoBehaviour, ActionInvokable {
     protected bool serverSideScreenshot;
     protected string robosimsClientToken = "";
     protected int robosimsPort = 8200;
-    protected string robosimsHost = "127.0.0.1";
+    protected string robosimsHost = "192.168.86.47";
     protected string ENVIRONMENT_PREFIX = "AI2THOR_";
     public Texture2D tex;
     public Rect readPixelsRect;
