@@ -13,7 +13,7 @@ def main():
     controller = Controller(
         agentMode='neural_os',
         server_class=ai2thor.wsgi_server.WsgiServer,
-        host="192.168.86.47",
+        host="192.168.0.31",
         port=8200,
         start_unity=False,
     ) 
